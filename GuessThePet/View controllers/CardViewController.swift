@@ -33,6 +33,7 @@ class CardViewController: UIViewController {
     var petCard: PetCard?
     
     private let flipPresentAnimationController = FlipPresentAnimationController()
+    private let flipDismissAnimationController = FlipDismissAnimationController()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -61,5 +62,10 @@ extension CardViewController: UIViewControllerTransitioningDelegate {
     func animationControllerForPresentedController(presented: UIViewController, presentingController presenting: UIViewController, sourceController source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         flipPresentAnimationController.originFrame = cardView.frame
         return flipPresentAnimationController
+    }
+    
+    func animationControllerForDismissedController(dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        flipDismissAnimationController.destinationFrame = cardView.frame
+        return flipDismissAnimationController
     }
 }
