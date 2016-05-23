@@ -32,6 +32,8 @@ class CardViewController: UIViewController {
     var pageIndex: Int?
     var petCard: PetCard?
     
+    private let flipPresentAnimationController = FlipPresentAnimationController()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -45,10 +47,19 @@ class CardViewController: UIViewController {
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
         if segue.identifier == revealSequeId, let destinationViewController = segue.destinationViewController as? RevealViewController {
             destinationViewController.petCard = petCard
+            destinationViewController.transitioningDelegate = self
         }
     }
     
     func handleTap() {
         performSegueWithIdentifier(revealSequeId, sender: nil)
+    }
+}
+
+extension CardViewController: UIViewControllerTransitioningDelegate {
+    
+    func animationControllerForPresentedController(presented: UIViewController, presentingController presenting: UIViewController, sourceController source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        flipPresentAnimationController.originFrame = cardView.frame
+        return flipPresentAnimationController
     }
 }
