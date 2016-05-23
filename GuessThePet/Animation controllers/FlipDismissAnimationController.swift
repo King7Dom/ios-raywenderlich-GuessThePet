@@ -1,5 +1,5 @@
 //
-//  FlipPresentAnimationController.swift
+//  FlipDismissAnimationController.swift
 //  GuessThePet
 //
 //  Created by Dominic Cheung on 23/05/2016.
@@ -8,9 +8,9 @@
 
 import UIKit
 
-class FlipPresentAnimationController: NSObject, UIViewControllerAnimatedTransitioning {
+class FlipDismissAnimationController: NSObject, UIViewControllerAnimatedTransitioning {
 
-    var originFrame = CGRect.zero
+    var destinationFrame = CGRect.zero
     
     func transitionDuration(transitionContext: UIViewControllerContextTransitioning?) -> NSTimeInterval {
         return 0.6
@@ -25,59 +25,50 @@ class FlipPresentAnimationController: NSObject, UIViewControllerAnimatedTransiti
                 return
         }
         
-        // Specify the starting and final frames for the “to” view.
-        // In this case, the transition starts from the card’s frame and scales to fill the whole screen.
-        let initialFrame = originFrame
-        let finalFrame = transitionContext.finalFrameForViewController(toVC)
+        // Specify the final frame for the “to” view.
+        let finalFrame = destinationFrame
         
-        // UIView snapshotting captures the CURRENT “to” view and renders it into a lightweight view
+        // UIView snapshotting captures the CURRENT “from” view and renders it into a lightweight view
         // This lets you animate the view together with its hierarchy.
-        // The snapshot’s frame starts off as the card’s frame. You also modify the corner radius to match the card.
-        let snapshot = toVC.view.snapshotViewAfterScreenUpdates(true)
-        snapshot.frame = initialFrame
+        let snapshot = fromVC.view.snapshotViewAfterScreenUpdates(false)
         snapshot.layer.cornerRadius = 25
         snapshot.layer.masksToBounds = true
         
         // Setup animatedViews on containerView
         // containerView is where all the transition should occur.
-        // It contains the fromVC.view already, we just need to add the toVC.view, hidden for now until transition complete
         containerView.addSubview(toVC.view)
-        // We want to add the snapshot because this view is used for the transition,
-        // toVC.view is the final result view snapshot should rotate out of view and hide from user
         containerView.addSubview(snapshot)
-        toVC.view.hidden = true
+        // We hide the fromVC.view to avoid conflict with snapshot
+        fromVC.view.hidden = true
         
-        // Adding perspective and rotation transforms to views
         AnimationHelper.perspectiveTransformForContainerView(containerView)
-        snapshot.layer.transform = AnimationHelper.yRotation(M_PI_2)
+        toVC.view.layer.transform = AnimationHelper.yRotation(-M_PI_2)
         
         /**
          You need the duration of your animations to match up with the duration you’ve declared for the whole transition
          so UIKit can keep things in sync. Hence the usage of transitionDuration(_:)
-         */ 
+         */
         let duration = transitionDuration(transitionContext)
         
         UIView.animateKeyframesWithDuration(
             duration, delay: 0, options: .CalculationModeCubic,
             animations: {
-                // Start by rotating the “from” view halfway around its y-axis to hide it from view.
-                UIView.addKeyframeWithRelativeStartTime(0.0, relativeDuration: 1/3, animations: {
-                    fromVC.view.layer.transform = AnimationHelper.yRotation(-M_PI_2)
-                })
-                // Reveal the snapshot using the same technique.
-                UIView.addKeyframeWithRelativeStartTime(1/3, relativeDuration: 1/3, animations: {
-                    snapshot.layer.transform = AnimationHelper.yRotation(0.0)
-                })
-                // Set the frame of the snapshot to fill the screen.
-                UIView.addKeyframeWithRelativeStartTime(2/3, relativeDuration: 1/3, animations: {
+                // Scale the frame of the screenshot to the final frame
+                UIView.addKeyframeWithRelativeStartTime(0, relativeDuration: 1/3, animations: { 
                     snapshot.frame = finalFrame
+                })
+                // Rotate the snapshot half way from the y-axis to hide it from view
+                UIView.addKeyframeWithRelativeStartTime(1/3, relativeDuration: 1/3, animations: { 
+                    snapshot.layer.transform = AnimationHelper.yRotation(M_PI_2)
+                })
+                // Rotate the final view into the final position
+                UIView.addKeyframeWithRelativeStartTime(2/3, relativeDuration: 1/3, animations: { 
+                    toVC.view.layer.transform = AnimationHelper.yRotation(0.0)
                 })
             },
             completion: { _ in
-                // Safe to reveal the real “to” view.
-                toVC.view.hidden = false
-                // Rotate the “from” view back in place; otherwise, it would hidden when transitioning back.
-                fromVC.view.layer.transform = AnimationHelper.yRotation(0.0)
+                // Safe to reveal the real "from" view
+                fromVC.view.hidden = false
                 // Remove the snapshot since it’s no longer useful.
                 snapshot.removeFromSuperview()
                 // Calling completeTransition informs the transitioning context that the animation is complete.
@@ -86,5 +77,4 @@ class FlipPresentAnimationController: NSObject, UIViewControllerAnimatedTransiti
             }
         )
     }
-    
 }
